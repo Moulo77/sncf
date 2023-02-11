@@ -6,9 +6,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart' as env;
 import 'package:http/http.dart' as http;
+import 'package:http/http.dart';
+import 'package:sncf/entities/Stop.dart';
+import 'package:sncf/entities/TypeTrain.dart';
 import 'dart:convert';
 
 import 'entities/Station.dart';
+import 'entities/Train.dart';
 
 Future main() async{
   await dotenv.load(fileName: '.env');
@@ -44,6 +48,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   List<Station> stations = []; //List of all stations in France
   List<List<dynamic>> csv = []; //List to store the csv file
+  List<Train> departures = [];
 
   Future<List<List<dynamic>>> loadCsv() async {
     final String data = await DefaultAssetBundle.of(context)
@@ -72,10 +77,64 @@ class _MyHomePageState extends State<MyHomePage> {
     final response = await http.get(Uri.parse("https://api.sncf.com/v1/coverage/sncf/stop_areas/stop_area%3ASNCF%3A$codeUic\/departures?&key=$token"));
 
     if(response.statusCode == 200){
-      print(response.body);
+      parseDepartures(response.body,selected.codeUIC);
     }else{
-      print(response.body);
+      print("unable to fetch api ${response.body}");
     }
+  }
+
+  Future<void> parseDepartures(String response, int codeUic) async{
+    final departures = jsonDecode(response)['departures'] as List;
+    final departuresList = <Train>[];
+
+    departures.forEach((element) {
+      final informations = element['display_informations'];
+      final time = element['stop_date_time'];
+      
+      final direction = informations['direction'].toString().split('(')[0]; //Name of the arrival station
+      final numero = informations['trip_short_name']; //Journey's number
+      final typeTrain = getTypeTrain(informations['network']); //Type of train
+
+      //Get the time of departure
+      final hourDeparture = time['departure_date_time'].toString().substring(9,11);
+      final minuteDeparture = time['departure_date_time'].toString().substring(11,13);
+
+      var train = Train(int.parse(numero), typeTrain, hourDeparture, minuteDeparture);
+
+      train.to = Stop("", "", "", "", Station(codeUic,direction,0,0));
+
+      departuresList.add(train);
+      setState(() {
+        this.departures = departuresList;
+      });
+    });
+  }
+
+  TypeTrain getTypeTrain(String json){
+    var typeTrain;
+    switch(json.split(' ')[0]){
+      case 'TER':{
+        typeTrain = TypeTrain.TER;
+      }
+      break;
+      case 'TGV':{
+        typeTrain = TypeTrain.TGV;
+      }
+      break;
+      case 'Intercites':{
+        typeTrain = TypeTrain.Intercites;
+      }
+      break;
+      case 'OUIGO':{
+        typeTrain = TypeTrain.OUIGI;
+      }
+      break;
+      default:{
+        typeTrain = TypeTrain.UNDEFINED;
+      }
+    }
+
+    return typeTrain;
   }
 
   @override
@@ -134,15 +193,23 @@ class _MyHomePageState extends State<MyHomePage> {
               style: Theme.of(context).textTheme.subtitle1,
             ),
             new Expanded(
-              child: ListView(
-                children: <Widget>[
-                  Container(
-                    child: Text("1"),
-                  ),
-                  Container(
-                    child: Text("2"),
-                  )
-                ]
+              child: ListView.builder(
+                itemCount: departures.length,
+                itemBuilder: (context, index){
+                  final departure = departures[index];
+                  return Container(
+                    margin: EdgeInsets.only(left: 20, right: 20, bottom: 0, top: 10),
+                    child: ListTile(
+                      title: Text(departure.to.station.name),
+                      subtitle: Text(departure.toString()),
+                      shape:RoundedRectangleBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(32)),
+                        side: BorderSide(color: Colors.black),
+                      ),
+                      onTap: (){},
+                    )
+                  );
+                },
               )
             )
           ],

@@ -2,5 +2,6 @@ enum TypeTrain{
   TER,
   TGV,
   Intercites,
-  OUIGI
+  OUIGI,
+  UNDEFINED
 }

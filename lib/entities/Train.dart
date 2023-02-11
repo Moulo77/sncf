@@ -4,13 +4,13 @@ import 'package:sncf/entities/TypeTrain.dart';
 class Train{
   int num;
   TypeTrain typeTrain;
-  Stop from;
-  Stop to;
+  late Stop from;
+  late Stop to;
   late List<Stop> stops;
   String localHour;
   String localMinute;
 
-  Train(this.num, this.typeTrain, this.from, this.to, this.localHour, this.localMinute){
+  Train(this.num, this.typeTrain, this.localHour, this.localMinute){
     this.stops = [];
   }
 
@@ -20,10 +20,12 @@ class Train{
     if(!departureStation && !arrivalStation)stops.add(stop);
   }
 
+
+
   @override
   String toString() {
     String stationName = to.getStation().getName();
     
-    return "$localHour\h$localMinute - $stationName\n$typeTrain $num";
+    return "$localHour\h$localMinute\n${typeTrain.name} $num";
   }
 }
