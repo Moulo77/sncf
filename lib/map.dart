@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -28,7 +27,7 @@ class _MapState extends State<Map>{
       var latlng = LatLng(departure.stops[i].station.lat,departure.stops[i].station.lon);
       bounds.extend(latlng);
       points.add(latlng);
-      markers.add(Marker(point: latlng, builder: ((context) => marker)));
+      markers.add(Marker(point: latlng, builder: (context) => marker, ));
     }
 
 
@@ -39,35 +38,44 @@ class _MapState extends State<Map>{
       appBar: AppBar(
         title: const Text("Trajet"),
       ),
-      body: FlutterMap(
-          options: MapOptions(
-              bounds: bounds
+      body: Stack(
+        children: [
+          Container(
+            color: Colors.white,
+            width: double.infinity,
+            height: 50,
           ),
-          nonRotatedChildren: [
-              AttributionWidget.defaultWidget(
-                  source: 'OpenStreetMap contributors',
-                  onSourceTapped: null,
-              ),
-          ],
-          children: [
-              TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.example.app',
-              ),
-              MarkerLayer(
-                markers: markers
-              ),
-              PolylineLayer(
-                polylineCulling: false,
-                polylines: [
-                  Polyline(
-                    points: points,
-                    color: Colors.blue,
-                    strokeWidth: 3.5
-                  )
-                ],
-              )
-          ],
+          FlutterMap(
+            options: MapOptions(
+                bounds: bounds
+            ),
+            nonRotatedChildren: [
+                AttributionWidget.defaultWidget(
+                    source: 'OpenStreetMap contributors',
+                    onSourceTapped: null,
+                ),
+            ],
+            children: [
+                TileLayer(
+                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.example.app',
+                ),
+                MarkerLayer(
+                  markers: markers
+                ),
+                PolylineLayer(
+                  polylineCulling: false,
+                  polylines: [
+                    Polyline(
+                      points: points,
+                      color: Colors.blue,
+                      strokeWidth: 3.5
+                    )
+                  ],
+                ),
+            ],
+          )
+        ],
       )
     );
   }
